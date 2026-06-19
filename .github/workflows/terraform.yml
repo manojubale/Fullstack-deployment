@@ -14,7 +14,6 @@ jobs:
 terraform:
 runs-on: ubuntu-latest
 
-```
 permissions:
   contents: read
 
@@ -33,7 +32,6 @@ steps:
     uses: hashicorp/setup-terraform@v3
 
   - name: dev
-    id: env
     run: |
       if [[ "${GITHUB_REF_NAME}" == "develop" ]]; then
         echo "TF_DIR=dev" >> $GITHUB_ENV
@@ -58,5 +56,5 @@ steps:
   - name: Terraform Apply
     working-directory: ${{ env.TF_DIR }}
     run: terraform apply -auto-approve tfplan
-```
+
 
