@@ -11,12 +11,12 @@ env:
   AWS_REGION: ap-south-1
 
 jobs:
-terraform:
-runs-on: ubuntu-latest
+    terraform:
+           runs-on: ubuntu-latest
 
 
 permissions:
-  contents: read
+    contents: read
 
 steps:
   - name: Checkout Code
