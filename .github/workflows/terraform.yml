@@ -1,0 +1,62 @@
+name: Terraform Deployment
+
+on:
+push:
+branches:
+- develop
+- stage
+- main
+
+env:
+AWS_REGION: ap-south-1
+
+jobs:
+terraform:
+runs-on: ubuntu-latest
+
+```
+permissions:
+  contents: read
+
+steps:
+  - name: Checkout Code
+    uses: actions/checkout@v4
+
+  - name: Configure AWS Credentials
+    uses: aws-actions/configure-aws-credentials@v4
+    with:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      aws-region: ${{ env.AWS_REGION }}
+
+  - name: Setup Terraform
+    uses: hashicorp/setup-terraform@v3
+
+  - name: dev
+    id: env
+    run: |
+      if [[ "${GITHUB_REF_NAME}" == "develop" ]]; then
+        echo "TF_DIR=dev" >> $GITHUB_ENV
+      elif [[ "${GITHUB_REF_NAME}" == "stage" ]]; then
+        echo "TF_DIR=stage" >> $GITHUB_ENV
+      elif [[ "${GITHUB_REF_NAME}" == "main" ]]; then
+        echo "TF_DIR=prod" >> $GITHUB_ENV
+      fi
+
+  - name: Terraform Init
+    working-directory: ${{ env.TF_DIR }}
+    run: terraform init
+
+  - name: Terraform Validate
+    working-directory: ${{ env.TF_DIR }}
+    run: terraform validate
+
+  - name: Terraform Plan
+    working-directory: ${{ env.TF_DIR }}
+    run: terraform plan -out=tfplan
+
+  - name: Terraform Apply
+    working-directory: ${{ env.TF_DIR }}
+    run: terraform apply -auto-approve tfplan
+```
+
