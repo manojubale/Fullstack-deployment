@@ -1,7 +1,19 @@
 name: Terraform Deployment
-on: push: branches: - develop - stage - main
-env: AWS_REGION: ap-south-1
-jobs: terraform: runs-on: ubuntu-latest
+
+on:
+push:
+branches:
+- develop
+- stage
+- main
+
+env:
+AWS_REGION: ap-south-1
+
+jobs:
+terraform:
+runs-on: ubuntu-latest
+
 permissions:
   contents: read
 
@@ -19,7 +31,7 @@ steps:
   - name: Setup Terraform
     uses: hashicorp/setup-terraform@v3
 
-  - name: dev
+  - name: Select Environment
     run: |
       if [[ "${GITHUB_REF_NAME}" == "develop" ]]; then
         echo "TF_DIR=dev" >> $GITHUB_ENV
@@ -42,4 +54,7 @@ steps:
     run: terraform plan -out=tfplan
 
   - name: Terraform Apply
+    working-directory: ${{ env.TF_DIR }}
+    run: terraform apply -auto-approve tfplan
+
 
