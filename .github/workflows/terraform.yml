@@ -14,7 +14,7 @@ jobs:
 terraform:
 runs-on: ubuntu-latest
 
-```
+
 permissions:
   contents: read
 
@@ -57,4 +57,4 @@ steps:
   - name: Terraform Apply
     working-directory: ${{ env.TF_DIR }}
     run: terraform apply -auto-approve tfplan
-```
+
