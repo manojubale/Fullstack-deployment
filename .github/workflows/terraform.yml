@@ -2,17 +2,17 @@ name: Terraform Deployment
 
 on:
   push:
-    branches:
-        - develop
-        - stage
-        - main
+      branches:
+          - develop
+          - stage
+          - main
 
 env:
-   AWS_REGION: ap-south-1
+  AWS_REGION: ap-south-1
 
 jobs:
-   terraform:
-     runs-on: ubuntu-latest
+terraform:
+runs-on: ubuntu-latest
 
 
 permissions:
@@ -57,3 +57,4 @@ steps:
   - name: Terraform Apply
     working-directory: ${{ env.TF_DIR }}
     run: terraform apply -auto-approve tfplan
+
