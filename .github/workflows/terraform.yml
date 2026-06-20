@@ -1,0 +1,81 @@
+name: Terraform Deployment
+
+on:
+  push:
+    branches:
+      - develop
+      - stage
+      - main
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Terraform action to perform'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - apply
+          - destroy
+
+env:
+  AWS_REGION: ap-south-1
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: dev
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "develop" ]]; then
+            echo "TF_DIR=dev" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF_NAME}" == "stage" ]]; then
+            echo "TF_DIR=stage" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF_NAME}" == "main" ]]; then
+            echo "TF_DIR=prod" >> $GITHUB_ENV
+          fi
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform validate
+
+      # ---------- APPLY PATH ----------
+      - name: Terraform Plan (Apply)
+        if: github.event_name == 'push' || github.event.inputs.action == 'apply'
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        if: github.event_name == 'push' || github.event.inputs.action == 'apply'
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply -auto-approve tfplan
+
+      # ---------- DESTROY PATH ----------
+      - name: Terraform Plan (Destroy)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform plan -destroy -out=tfplan
+
+      - name: Terraform Destroy
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply -auto-approve tfplan
