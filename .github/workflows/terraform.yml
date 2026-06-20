@@ -1,10 +1,21 @@
 name: Terraform Deployment
+
 on:
   push:
     branches:
       - develop
       - stage
       - main
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Terraform action to perform'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - apply
+          - destroy
 
 env:
   AWS_REGION: ap-south-1
@@ -47,11 +58,24 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
         run: terraform validate
 
-      - name: Terraform Plan
+      # ---------- APPLY PATH ----------
+      - name: Terraform Plan (Apply)
+        if: github.event_name == 'push' || github.event.inputs.action == 'apply'
         working-directory: ${{ env.TF_DIR }}
         run: terraform plan -out=tfplan
 
       - name: Terraform Apply
+        if: github.event_name == 'push' || github.event.inputs.action == 'apply'
         working-directory: ${{ env.TF_DIR }}
         run: terraform apply -auto-approve tfplan
 
+      # ---------- DESTROY PATH ----------
+      - name: Terraform Plan (Destroy)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform plan -destroy -out=tfplan
+
+      - name: Terraform Destroy
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply -auto-approve tfplan
